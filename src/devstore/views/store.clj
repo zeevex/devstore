@@ -1,5 +1,6 @@
 (ns devstore.views.store
   (:require [devstore.views.common :as common]
+            [devstore.models.payment-processor :as proc]
             [noir.response :as resp]
             [noir.request :as req]
             [net.cgrand.enlive-html :as html])
@@ -40,15 +41,6 @@
               :notify_url    true}}
    ])
 
-(def payment-processors
-  "Pre-defined payment processors for the store to use."
-  [{:id         1
-    :name       "ZXEngine Pow"
-    :site-url   "http://zxengine.dev/"
-    :api-url    "http://zxengine.dev/cgi-bin/webscr"
-    :auth-token "2cf98ae35a308fee5f7d"
-    :opaque-id  "50F626"}])
-
 (defn- find-by-id [maps id]
   (some #(and (= id (% :id)) %) maps))
 
@@ -59,12 +51,6 @@ Key k in M is replaced with (F (REP k)).
 Values are not modified."
   [f rep m]
   (walk (fn [[k v]] [(f (rep k)) v]) identity m))
-
-(defn- current-processor-id
-  "The ID of the current payment-processor."
-  []
-  ;; FIXME: store and fetch from session
-  1)
 
 (defn- our-host-url
   "The host URL of the current request."
@@ -96,7 +82,7 @@ Values are not modified."
   [offer processor]
   (let [cart-params  {:cmd      "_cart"
                       :upload   1
-                      :business (processor :opaque-id)
+                      :business (:opaque-id processor)
                       :invoice  (to-long (now))
                       :rm       0}
         offer-params (select-keys offer [:brand :currency_code])
@@ -191,14 +177,14 @@ Elements in ITEMS are encoded based on their position/index in the list."
   [:#cartitem]       (html/substitute (map cart-item items))
   [:#subtotal]       (html/substitute (subtotal (subtotals items)))
   [:#cancelform]     (html/set-attr :action (our-host-url))
-  [:#purchaseform]   (html/set-attr :action (processor :api-url))
+  [:#purchaseform]   (html/set-attr :action (:api-url processor))
   [:#purchaseinputs] (html/substitute (input-elements formparams items)))
 
 (defpage "/store/:id" {id :id}
   (common/layout
    (if-let [offer (find-by-id offers id)]
-     (let [items      (get offer :items)
-           processor  (find-by-id payment-processors (current-processor-id))
+     (let [items      (:items offer)
+           processor  (proc/current-processor)
            formparams (form-params-for offer processor)]
        (render-template
         (cart items formparams processor))))))
