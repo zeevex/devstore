@@ -155,3 +155,7 @@ Elements in ITEMS are encoded based on their position/index in the list."
            formparams (form-params-for offer processor)]
        (render-template
         (cart items formparams processor))))))
+
+(defpage [:post "/processor"] {:as params}
+  (proc/set-processor (:processor params))
+  (resp/redirect "/"))
