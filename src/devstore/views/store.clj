@@ -1,6 +1,7 @@
 (ns devstore.views.store
   (:require [devstore.views.common :as common]
             [devstore.models.payment-processor :as proc]
+            [devstore.models.offer :as offer]
             [noir.response :as resp]
             [noir.request :as req]
             [net.cgrand.enlive-html :as html])
@@ -9,40 +10,6 @@
         [clj-time [core :only [now]]
                   [coerce :only [to-long]]]
         [clojure [walk :only [walk]]]))
-
-(def offers
-  "All offers available in the store."
-  [{:id "1"
-    :title "One Item Buy Now, USD"
-    :brand "anonymous_brand"
-    :currency_code "USD"
-    :items [{:item-name     "Bit O'Mead"
-             :item-sku      "123456"
-             :item-price    2.0
-             :item-quantity 1}]
-    :options {:return        true
-              :cancel_return true
-              :notify_url    false}}
-
-   {:id "2"
-    :title "Two Item Cart, Tokens, No Return/Cancel/Notify URL"
-    :brand "anonymous_brand"
-    :currency_code "ZXT"
-    :items [{:item-name     "Seven Milli-league Boots"
-             :item-sku      "123456"
-             :item-price    400.0
-             :item-quantity 2}
-            {:item-name     "Gloves of Autobahn Driving"
-             :item-sku      "98765"
-             :item-price    50.0
-             :item-quantity 1}]
-    :options {:return        true
-              :cancel_return false
-              :notify_url    true}}
-   ])
-
-(defn- find-by-id [maps id]
-  (some #(and (= id (% :id)) %) maps))
 
 (defn replace-keys
   "Replace keys of map M with those in REP using F as the transform.
@@ -144,7 +111,7 @@ Elements in ITEMS are encoded based on their position/index in the list."
   (common/layout
    [:h2 "Pick a Cart"]
    [:ul#offers
-    (map list-offer offers)]))
+    (map list-offer (offer/all))]))
 
 (defn render-template [s]
   (apply str s))
@@ -182,7 +149,7 @@ Elements in ITEMS are encoded based on their position/index in the list."
 
 (defpage "/store/:id" {id :id}
   (common/layout
-   (if-let [offer (find-by-id offers id)]
+   (if-let [offer (offer/find-by-id id)]
      (let [items      (:items offer)
            processor  (proc/current-processor)
            formparams (form-params-for offer processor)]
