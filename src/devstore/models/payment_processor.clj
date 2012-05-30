@@ -8,13 +8,13 @@
 (def payment-processors
   "Pre-defined payment processors for the store to use."
   [{:id         1
-    :name       "ZXEngine Pow"
+    :name       "Local Pow ZXEngine"
     :site-url   "http://zxengine.dev/"
     :api-url    "http://zxengine.dev/cgi-bin/webscr"
     :auth-token "2cf98ae35a308fee5f7d"
     :opaque-id  "50F626"}
    {:id         2
-    :name       "Sandbox strawmann"
+    :name       "Sandbox - strawmann"
     :site-url   "http://sandbox.zeevex.com/"
     :api-url    "http://sandbox.zeevex.com/cgi-bin/webscr"
     :auth-token "437880eaa7e92be19bba"

@@ -6,31 +6,35 @@
          [element :only [link-to]]
          form]))
 
-(defn- submit-on-change
-  "Have form auto-submit on change."
+(defn- submit-form-on-selection-change
+  "Have FORM auto-submit on change."
   [form]
   (assoc-in form [1 :onchange] "this.form.submit()"))
 
-(defpartial select-processor [& content]
+;; Wraps CONTENT in a form for selecting the processor
+(defpartial select-payment-processor
+  [& content]
   (form-to [:post "/processor"]
            content
-           (submit-on-change
+           (submit-form-on-selection-change
             (drop-down "processor"
-                       (map #(vector (:name %) (:id %)) (proc/all))
-                       (:id (proc/current-processor))))))
+                       (into ["Choose Payment Processor"]
+                             (map #(vector (:name %) (:id %)) (proc/all)))))))
 
-(defpartial nav-bar []
+(defpartial nav-bar
+  []
   [:div.nav
-   (select-processor
+   (select-payment-processor
     [:small
      (link-to "/" "Home")
-     "| Visit Payment Processor:"
+     " | Visit Payment Processor:"
      (let [processor (proc/current-processor)]
        (link-to (:site-url processor) (:name processor)))
-     "| Change Payment Processor:"])
+     " | "])
    [:p]])
 
-(defpartial layout [& content]
+(defpartial layout
+  [& content]
   (html5
    [:head
     [:title "Zeevex Demo Store"]
