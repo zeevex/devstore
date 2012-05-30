@@ -1,6 +1,7 @@
 (ns devstore.server
   (:require [noir.server :as server]
-            [devstore.models :as models]))
+            [devstore.models :as models])
+   (:use [ring.middleware.session.cookie :only [cookie-store]]))
 
 (server/load-views-ns 'devstore.views)
 
@@ -9,5 +10,6 @@
         port (Integer. (get (System/getenv) "PORT" "8080"))]
     (models/initialize)
     (server/start port {:mode mode
-                        :ns 'devstore})))
+                        :ns 'devstore
+                        :session-store (cookie-store)})))
 
