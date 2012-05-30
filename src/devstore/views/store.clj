@@ -158,4 +158,4 @@ Elements in ITEMS are encoded based on their position/index in the list."
 
 (defpage [:post "/processor"] {:as params}
   (proc/set-current-processor (:processor params))
-  (resp/redirect "/"))
+  (resp/redirect (get-in (req/ring-request) [:headers "referer"] "/")))
