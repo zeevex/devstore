@@ -105,7 +105,6 @@ Elements in ITEMS are encoded based on their position/index in the list."
               (replace-keys #(key-for-index % (inc idx)) keys item)))]
     (apply merge params (map-indexed inputs-for-item items))))
 
-
 ;; The views
 
 (defpage "/" []
@@ -142,19 +141,38 @@ Elements in ITEMS are encoded based on their position/index in the list."
   [:#subtotal-tax]      (html/content (str subtotal-tax))
   [:#subtotal-shipping] (html/content (str subtotal-shipping)))
 
+(html/defsnippet response-entry "devstore/views/cart.html" [:tr#response-entry]
+  [[param value]]
+  [:#response-param] (html/content (name param))
+  [:#response-value] (html/content (name value)))
+
+(html/defsnippet response-detail "devstore/views/cart.html" [:#responses]
+  [status params]
+  [:#response-status] (html/content status)
+  [:#response-entry]  (html/substitute (map response-entry params)))
+
+(defn- responses-in
+  [params]
+  (if-let [[_ action] (find params :action)]
+    (case action
+      "cancel"   (response-detail "cancelled" params)
+      "complete" (response-detail "completed" params)
+      "")))
+
 (html/defsnippet input-elements "devstore/views/cart.html" [:input#business]
   [params items]
   [:#business] (html/clone-for [[k v] (input-params params items)]
                                (html/set-attr :name (name k) :id (name k) :value v)))
 
 (html/deftemplate cart "devstore/views/cart.html"
-  [items formparams processor]
-  [:h3]              (html/content (str "Invoice #: " (formparams :invoice)))
+  [items formparams processor req-params]
+  [:#invoicenum]     (html/content (str (formparams :invoice)))
   [:#cartitem]       (html/substitute (map cart-item items))
   [:#subtotal]       (html/substitute (subtotal (subtotals items)))
   [:#cancelform]     (html/set-attr :action (our-host-url))
   [:#purchaseform]   (html/set-attr :action (:api-url processor))
-  [:#purchaseinputs] (html/substitute (input-elements formparams items)))
+  [:#purchaseinputs] (html/substitute (input-elements formparams items))
+  [:#responses]      (html/substitute (responses-in req-params)))
 
 (defpage "/store/:id" {id :id :as params}
   (println "GET /store/:id " params)
@@ -164,7 +182,7 @@ Elements in ITEMS are encoded based on their position/index in the list."
            processor  (proc/current-processor)
            formparams (form-params-for offer processor)]
        (render-template
-        (cart items formparams processor))))))
+        (cart items formparams processor params))))))
 
 (defpage [:post "/store/:id"] {id :id :as params}
   (println "POST /store/:id " params)

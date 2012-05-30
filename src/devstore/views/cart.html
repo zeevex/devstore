@@ -1,4 +1,4 @@
-<h3>Invoice #:</h3>
+<h3>Invoice #: <span id="invoicenum"></span></h3>
 
 <table border="0" class="cart">
   <thead>
@@ -76,3 +76,22 @@
 
   </tbody>
 </table>
+
+<div id="responses">
+  <p>
+    <h3>Purchase was <span id="response-status">completed</span>!</h2>
+    <table id="response-detail">
+      <thead>
+	<tr>
+	  <th>Response Parameter</th>
+	  <th>Value</th>
+	</tr>
+      </thead>
+      <tbody>
+	<tr id="response-entry">
+	  <td id="response-param">txn_id</td>
+	  <td id="response-value">9daf6dbcd7cf9ef9_4fc67191</td>
+	</tr>
+    </table>
+  </p>
+</div>
