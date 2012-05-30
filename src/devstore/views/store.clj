@@ -41,7 +41,7 @@ Values are not modified."
   [offer action]
   (str (our-host-url)
        (url-for "/store/:id" {:id (:id offer)})
-       "?a=" action))
+       "?action=" action))
 
 (defn- response-params-for
   "Returns map of purchase completion response parameters."
