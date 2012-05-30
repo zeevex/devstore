@@ -36,16 +36,25 @@ Values are not modified."
          (and (request :query-string)
               (str "?" (request :query-string))))))
 
-(defn- opt-params-for
+(defn- return-url-for
+  "The return url for OFFER under ACTION."
+  [offer action]
+  (str (our-host-url)
+       (url-for "/store/:id" {:id (:id offer)})
+       "?a=" action))
+
+(defn- response-params-for
+  "Returns map of purchase completion response parameters."
   [offer processor]
   (let [url (our-url)
-        options {:return        url
-                 :cancel_return url
-                 :notify_url    url}]
-    ;; replace true :options values with corresponding entry here
-    (walk (fn [[k v]] (when v [k (options k)])) identity (offer :options))))
+        response {:return        (return-url-for offer "complete")
+                  :cancel_return (return-url-for offer "cancel")
+                  :notify_url    url}]
+    ;; replace any response entries with the corresponding URLs
+    (walk (fn [[k v]] (when v [k (response k)])) identity (:response offer))))
 
 (defn- form-params-for
+  "Returns map of all non-item form parameters."
   [offer processor]
   (let [cart-params  {:cmd      "_cart"
                       :upload   1
@@ -53,8 +62,8 @@ Values are not modified."
                       :invoice  (to-long (now))
                       :rm       0}
         offer-params (select-keys offer [:brand :currency_code])
-        opt-params   (opt-params-for offer processor)]
-    (merge cart-params offer-params opt-params)))
+        response-params (response-params-for offer processor)]
+    (merge cart-params offer-params response-params)))
 
 (defn- subtotals [offer-items]
   (letfn [(add-item [a item]
@@ -147,7 +156,8 @@ Elements in ITEMS are encoded based on their position/index in the list."
   [:#purchaseform]   (html/set-attr :action (:api-url processor))
   [:#purchaseinputs] (html/substitute (input-elements formparams items)))
 
-(defpage "/store/:id" {id :id}
+(defpage "/store/:id" {id :id :as params}
+  (println "GET /store/:id " params)
   (common/layout
    (if-let [offer (offer/find-by-id id)]
      (let [items      (:items offer)
@@ -155,6 +165,10 @@ Elements in ITEMS are encoded based on their position/index in the list."
            formparams (form-params-for offer processor)]
        (render-template
         (cart items formparams processor))))))
+
+(defpage [:post "/store/:id"] {id :id :as params}
+  (println "POST /store/:id " params)
+  (render "/store/:id" params))
 
 (defpage [:post "/processor"] {:as params}
   (proc/set-current-processor (:processor params))

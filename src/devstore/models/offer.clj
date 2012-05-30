@@ -14,9 +14,9 @@
              :item-sku      "123456"
              :item-price    2.0
              :item-quantity 1}]
-    :options {:return        true
-              :cancel_return true
-              :notify_url    false}}
+    :response {:return        true
+               :cancel_return true
+               :notify_url    false}}
 
    {:id "2"
     :title "Two Item Cart, Tokens, No Return/Cancel/Notify URL"
@@ -30,9 +30,9 @@
              :item-sku      "98765"
              :item-price    50.0
              :item-quantity 1}]
-    :options {:return        true
-              :cancel_return false
-              :notify_url    true}}
+    :response {:return        true
+               :cancel_return false
+               :notify_url    true}}
    ])
 
 (defn all
