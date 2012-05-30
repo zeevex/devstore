@@ -1,5 +1,7 @@
 (ns devstore.models.payment-processor
-  (:require [noir.session :as session]))
+  (:require [noir.session :as session]
+            [clj-http.client :as client])
+  (:use [clojure.string :only [split split-lines]]))
 
 (defn init!
   []
@@ -42,3 +44,18 @@
   "All payment processors."
   []
   payment-processors)
+
+(defn fetch-pdt-status
+  "Fetch the PDT completion status for transaction TX at PROCESSOR."
+  [processor tx]
+  (when-let [response (client/post (:api-url processor)
+                                   {:query-params
+                                    {:cmd "_notify_synch"
+                                     :at (:auth-token processor)
+                                     :tx tx}})]
+    (when (= (get-in response [:headers "status"]) "200")
+      ;; first line of body is SUCCESS, followed by key/value pairs
+      (let [body (map #(split % #"=") (split-lines (:body response)))]
+        (when (= "SUCCESS" (-> body first first))
+          (map #(if (= (count %) 1) (conj % "") %) ; blank values: memo=
+               (rest body)))))))
