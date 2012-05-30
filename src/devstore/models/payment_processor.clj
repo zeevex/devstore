@@ -20,31 +20,23 @@
     :auth-token "437880eaa7e92be19bba"
     :opaque-id  "50F626"}])
 
-(defn- default-processor-id
+(def ^:private default-processor-id
   "The default payment processor's id."
-  []
   1)
-
-(defn str->int
-  [str]
-  (when (re-matches (re-pattern "\\d+") str)
-    (read-string str)))
 
 (defn- current-processor-id
   "The ID of the current payment-processor."
   []
-  (if-let [proc-id (str->int (session/get :processor ""))]
-    proc-id
-    (default-processor-id)))
+  (Integer/parseInt (session/get :processor (str default-processor-id))))
 
-(defn set-processor
+(defn set-current-processor
   [id]
   (session/put! :processor id))
 
 (defn current-processor
   "The current payment processor."
   []
-  (some #(and (= (current-processor-id) (% :id)) %) payment-processors))
+  (some #(and (= (current-processor-id) (:id %)) %) payment-processors))
 
 (defn all
   "All payment processors."
