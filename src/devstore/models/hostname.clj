@@ -12,7 +12,9 @@
 
 (defn set-current-hostname
   [hostname]
-  (session/put! :hostname hostname))
+  (if (= "" hostname)
+    (session/remove! :hostname)
+    (session/put!    :hostname hostname)))
 
 (defn our-public-url
   "The public URL for our service."
