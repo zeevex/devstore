@@ -1,5 +1,6 @@
 (ns devstore.views.common
-  (:require [devstore.models.payment-processor :as proc])
+  (:require [devstore.models.payment-processor :as proc]
+            [devstore.models.hostname          :as host])
   (:use [noir.core :only [defpartial]]
         [hiccup
          [page    :only [include-css html5]]
@@ -11,26 +12,23 @@
   [form]
   (assoc-in form [1 :onchange] "this.form.submit()"))
 
-;; Wraps CONTENT in a form for selecting the processor
-(defpartial select-payment-processor
-  [& content]
-  (form-to [:post "/processor"]
-           content
-           (submit-form-on-selection-change
-            (drop-down "processor"
-                       (into ["Choose Payment Processor"]
-                             (map #(vector (:name %) (:id %)) (proc/all)))))))
-
 (defpartial nav-bar
   []
   [:div.nav
-   (select-payment-processor
+   (form-to
+    [:post "/processor"]
     [:small
      (link-to "/" "Home")
      " | Visit Payment Processor:"
      (let [processor (proc/current-processor)]
        (link-to (:site-url processor) (:name processor)))
-     " | "])
+     " | "
+     (submit-form-on-selection-change
+      (drop-down "processor"
+                 (into [["Choose Payment Processor" 0]]
+                       (map #(vector (:name %) (:id %)) (proc/all)))))
+     " | Our hostname (for IPNs): "
+     (text-field "hostname" (host/current-hostname))])
    [:p]])
 
 (defpartial layout
