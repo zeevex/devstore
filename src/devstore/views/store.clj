@@ -172,3 +172,6 @@ Elements in ITEMS are encoded based on their position/index in the list."
                 (= (host/current-hostname) hostname))
     (host/set-current-hostname hostname))
   (resp/redirect (get-in (req/ring-request) [:headers "referer"] "/")))
+
+(defpage [:post "/notify/ipn/:id"] {id :id :as params}
+  (println "NOTIFY /notify/ipn/:id" params))
