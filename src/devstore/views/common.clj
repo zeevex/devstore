@@ -16,7 +16,7 @@
   []
   [:div.nav
    (form-to
-    [:post "/processor"]
+    [:post "/options"]
     [:small
      (link-to "/" "Home")
      " | Visit Payment Processor:"

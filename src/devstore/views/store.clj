@@ -165,12 +165,10 @@ Elements in ITEMS are encoded based on their position/index in the list."
   (println "POST /store/:id " params)
   (render "/store/:id" params))
 
-(defpage [:post "/processor"] {:as params}
-  (let [processor (:processor params)
-        hostname  (:hostname params)]
-    (when-not (= "0" processor)
-      (proc/set-current-processor processor))
-    (when-not (or (nil? hostname)
-                  (= (host/current-hostname) hostname))
-      (host/set-current-hostname hostname)))
+(defpage [:post "/options"] {:keys [processor hostname] :as params}
+  (when-not (= "0" processor)
+    (proc/set-current-processor processor))
+  (when-not (or (nil? hostname)
+                (= (host/current-hostname) hostname))
+    (host/set-current-hostname hostname))
   (resp/redirect (get-in (req/ring-request) [:headers "referer"] "/")))
