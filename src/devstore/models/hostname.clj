@@ -15,7 +15,7 @@
 (defn- request-scheme
   "Scheme for the request."
   [& [request]]
-  (:scheme (req/ring-request)))
+  (name (:scheme (req/ring-request))))
 
 (defn current-hostname
   []
