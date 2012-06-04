@@ -2,6 +2,7 @@
   (:require [devstore.views.common :as common]
             [devstore.models.payment-processor :as proc]
             [devstore.models.offer :as offer]
+            [devstore.models.hostname :as host]
             [noir.response :as resp]
             [noir.request :as req]
             [net.cgrand.enlive-html :as html])
@@ -19,37 +20,12 @@ Values are not modified."
   [f rep m]
   (walk (fn [[k v]] [(f (rep k)) v]) identity m))
 
-(defn- our-host-url
-  "The host URL of the current request."
-  []
-  (let [request (req/ring-request)]
-    (str (name (request :scheme)) "://"
-         (get-in request [:headers "host"]))))
-
-(defn- our-url
-  "The URL of the current request."
-  []
-  (let [request (req/ring-request)]
-    (str (name (request :scheme)) "://"
-         (get-in request [:headers "host"])
-         (request :uri)
-         (and (request :query-string)
-              (str "?" (request :query-string))))))
-
-(defn- return-url-for
-  "The return url for OFFER under ACTION."
-  [offer action]
-  (str (our-host-url)
-       (url-for "/store/:id" {:id (:id offer)})
-       "?action=" action))
-
 (defn- response-params-for
   "Returns map of purchase completion response parameters."
   [offer processor]
-  (let [url (our-url)
-        response {:return        (return-url-for offer "complete")
-                  :cancel_return (return-url-for offer "cancel")
-                  :notify_url    url}]
+  (let [response {:return        (host/return-url-for offer "complete")
+                  :cancel_return (host/return-url-for offer "cancel")
+                  :notify_url    (host/notify-url-for offer)}]
     ;; replace any response entries with the corresponding URLs
     (walk (fn [[k v]] (when v [k (response k)])) identity (:response offer))))
 
@@ -169,7 +145,7 @@ Elements in ITEMS are encoded based on their position/index in the list."
   [:#invoicenum]     (html/content (str (formparams :invoice)))
   [:#cartitem]       (html/substitute (map cart-item items))
   [:#subtotal]       (html/substitute (subtotal (subtotals items)))
-  [:#cancelform]     (html/set-attr :action (our-host-url))
+  [:#cancelform]     (html/set-attr :action (host/our-host-url))
   [:#purchaseform]   (html/set-attr :action (:api-url processor))
   [:#purchaseinputs] (html/substitute (input-elements formparams items))
   [:#responses]      (html/substitute (responses-in params pdt-response)))
@@ -190,5 +166,11 @@ Elements in ITEMS are encoded based on their position/index in the list."
   (render "/store/:id" params))
 
 (defpage [:post "/processor"] {:as params}
-  (proc/set-current-processor (:processor params))
+  (let [processor (:processor params)
+        hostname  (:hostname params)]
+    (when-not (= "0" processor)
+      (proc/set-current-processor processor))
+    (when-not (or (nil? hostname)
+                  (= (host/current-hostname) hostname))
+      (host/set-current-hostname hostname)))
   (resp/redirect (get-in (req/ring-request) [:headers "referer"] "/")))
