@@ -149,14 +149,14 @@ Elements in ITEMS are encoded based on their position/index in the list."
 (html/defsnippet response-detail "devstore/views/cart.html" [:#responses]
   [status params]
   [:#response-status] (html/content status)
-  [:#response-entry]  (html/substitute (map response-entry params)))
+  [:#response-entry]  (html/substitute (map response-entry (sort-by #(-> % first name) params))))
 
 (defn- responses-in
-  [params]
+  [params pdt-response]
   (if-let [[_ action] (find params :action)]
     (case action
-      "cancel"   (response-detail "cancelled" params)
-      "complete" (response-detail "completed" params)
+      "cancel"   (response-detail "cancelled" pdt-response)
+      "complete" (response-detail "completed" pdt-response)
       "")))
 
 (html/defsnippet input-elements "devstore/views/cart.html" [:input#business]
@@ -165,14 +165,14 @@ Elements in ITEMS are encoded based on their position/index in the list."
                                (html/set-attr :name (name k) :id (name k) :value v)))
 
 (html/deftemplate cart "devstore/views/cart.html"
-  [items formparams processor req-params]
+  [items formparams processor params pdt-response]
   [:#invoicenum]     (html/content (str (formparams :invoice)))
   [:#cartitem]       (html/substitute (map cart-item items))
   [:#subtotal]       (html/substitute (subtotal (subtotals items)))
   [:#cancelform]     (html/set-attr :action (our-host-url))
   [:#purchaseform]   (html/set-attr :action (:api-url processor))
   [:#purchaseinputs] (html/substitute (input-elements formparams items))
-  [:#responses]      (html/substitute (responses-in req-params)))
+  [:#responses]      (html/substitute (responses-in params pdt-response)))
 
 (defpage "/store/:id" {id :id :as params}
   (println "GET /store/:id " params)
@@ -180,9 +180,10 @@ Elements in ITEMS are encoded based on their position/index in the list."
    (if-let [offer (offer/find-by-id id)]
      (let [items      (:items offer)
            processor  (proc/current-processor)
-           formparams (form-params-for offer processor)]
+           formparams (form-params-for offer processor)
+           pdt-status (proc/pdt-from-params params)]
        (render-template
-        (cart items formparams processor params))))))
+        (cart items formparams processor params pdt-status))))))
 
 (defpage [:post "/store/:id"] {id :id :as params}
   (println "POST /store/:id " params)
