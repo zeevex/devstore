@@ -62,7 +62,7 @@
                                     {:cmd "_notify_synch"
                                      :at (:auth-token processor)
                                      :tx tx}})]
-    (when (= (get-in response [:headers "status"]) "200")
+    (when (= 200 (:status response))
       ;; first line of body is SUCCESS, followed by key/value pairs
       (let [lines (split-lines (:body response))]
         (when (= "SUCCESS" (first lines))
