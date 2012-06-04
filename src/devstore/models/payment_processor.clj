@@ -45,6 +45,15 @@
   []
   payment-processors)
 
+(defn- decode-pdt-response-line
+  "Decode a line of the PDT response into a [KEY VALUE] pair."
+  [line]
+  (let [[key & v] (split line #"=")
+        value (if (nil? v)
+                ""
+                (java.net.URLDecoder/decode (first v) "utf-8"))]
+    [key value]))
+
 (defn fetch-pdt-status
   "Fetch the PDT completion status for transaction TX at PROCESSOR."
   [processor tx]
@@ -55,7 +64,12 @@
                                      :tx tx}})]
     (when (= (get-in response [:headers "status"]) "200")
       ;; first line of body is SUCCESS, followed by key/value pairs
-      (let [body (map #(split % #"=") (split-lines (:body response)))]
-        (when (= "SUCCESS" (-> body first first))
-          (map #(if (= (count %) 1) (conj % "") %) ; blank values: memo=
-               (rest body)))))))
+      (let [lines (split-lines (:body response))]
+        (when (= "SUCCESS" (first lines))
+          (into {} (map decode-pdt-response-line (rest lines))))))))
+
+(defn pdt-from-params
+  "Fetch the PDT completion status from PARAMS."
+  [params]
+  (when-let [tx (or (:tx params) (:txn params))]
+    (fetch-pdt-status (current-processor) tx)))
