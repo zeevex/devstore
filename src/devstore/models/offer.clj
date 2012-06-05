@@ -7,7 +7,7 @@
 (def offers
   "All offers available in the store."
   [{:id "1"
-    :title "One Item Buy Now, USD"
+    :title "One Item Buy Now, USD, Return/Cancel/Notify"
     :brand "anonymous_brand"
     :currency_code "USD"
     :items [{:item-name     "Bit O'Mead"
@@ -16,7 +16,7 @@
              :item-quantity 1}]
     :response {:return        true
                :cancel_return true
-               :notify_url    false}}
+               :notify_url    true}}
 
    {:id "2"
     :title "Two Item Cart, Tokens, No Return/Cancel/Notify URL"
@@ -30,9 +30,9 @@
              :item-sku      "98765"
              :item-price    50.0
              :item-quantity 1}]
-    :response {:return        true
+    :response {:return        false
                :cancel_return false
-               :notify_url    true}}
+               :notify_url    false}}
    ])
 
 (defn all
