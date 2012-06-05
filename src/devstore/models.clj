@@ -1,8 +1,13 @@
 (ns devstore.models
-  (:require [devstore.models.payment-processor :as proc]
-            [devstore.models.offer :as offer]))
+  (:require [devstore.models
+             [payment-processor :as proc]
+             [offer             :as offer]
+             [hostname          :as hostname]
+             [purchase          :as purchase]]))
 
 (defn initialize
   []
   (proc/init!)
-  (offer/init!))
+  (offer/init!)
+  (hostname/init!)
+  (purchase/init!))

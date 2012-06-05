@@ -3,7 +3,7 @@
                   [request :as req]
                   [session :as session]]))
 
-(defn- init!
+(defn init!
   []
   true)
 
