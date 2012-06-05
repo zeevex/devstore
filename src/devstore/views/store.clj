@@ -1,16 +1,19 @@
 (ns devstore.views.store
   (:require [devstore.views.common :as common]
-            [devstore.models.payment-processor :as proc]
-            [devstore.models.offer :as offer]
-            [devstore.models.hostname :as host]
-            [noir.response :as resp]
-            [noir.request :as req]
+            [devstore.models
+             [payment-processor :as proc]
+             [offer             :as offer]
+             [hostname          :as host]
+             [purchase          :as purchase]]
+            [noir
+             [response :as resp]
+             [request  :as req]]
             [net.cgrand.enlive-html :as html])
   (:use noir.core
         [hiccup core page form element]
-        [clj-time [core :only [now]]
-                  [coerce :only [to-long]]]
-        [clojure [walk :only [walk]]]))
+        [clojure
+         [walk :only [walk]]
+         [pprint :only [pprint]]]))
 
 (defn replace-keys
   "Replace keys of map M with those in REP using F as the transform.
@@ -35,7 +38,7 @@ Values are not modified."
   (let [cart-params  {:cmd      "_cart"
                       :upload   1
                       :business (:opaque-id processor)
-                      :invoice  (to-long (now))
+                      :invoice  (purchase/new-invoice-id)
                       :rm       0}
         offer-params (select-keys offer [:brand :currency_code])
         response-params (response-params-for offer processor)]
@@ -158,12 +161,22 @@ Elements in ITEMS are encoded based on their position/index in the list."
            processor  (proc/current-processor)
            formparams (form-params-for offer processor)
            pdt-status (proc/pdt-from-params params)]
+       ;; track new purchases and pdts as needed
+       (if (nil? pdt-status)
+         (purchase/create  formparams)
+         (purchase/add-pdt pdt-status))
        (render-template
         (cart items formparams processor params pdt-status))))))
 
 (defpage [:post "/store/:id"] {id :id :as params}
   (println "POST /store/:id " params)
   (render "/store/:id" params))
+
+(defpage [:post "/notify/ipn/:id"] {id :id :as params}
+  (println "NOTIFY /notify/ipn/:id" params)
+  (purchase/add-ipn params)
+  ;;(println "ENTRY " (pprint (purchase/find-by-invoice (:invoice params))))
+  "OK")
 
 (defpage [:post "/options"] {:keys [processor hostname] :as params}
   (when-not (= "0" processor)
@@ -172,6 +185,3 @@ Elements in ITEMS are encoded based on their position/index in the list."
                 (= (host/current-hostname) hostname))
     (host/set-current-hostname hostname))
   (resp/redirect (get-in (req/ring-request) [:headers "referer"] "/")))
-
-(defpage [:post "/notify/ipn/:id"] {id :id :as params}
-  (println "NOTIFY /notify/ipn/:id" params))
