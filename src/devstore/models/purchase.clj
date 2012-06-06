@@ -52,3 +52,9 @@ Returns a map containing :purchase, :ipn, and :pdt maps."
   [invoice]
   (when-let [[_ entry] (find @purchases invoice)]
     entry))
+
+(defn find-by-cart-id
+  "Locate purchases for a cart, identified by its ID.
+Returns a sequence of purchases."
+  [id]
+  (filter (fn [[_ {purchase :purchase}]] (= id (:id purchase))) @purchases))
