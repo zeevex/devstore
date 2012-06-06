@@ -52,7 +52,7 @@
         value (if (nil? v)
                 ""
                 (java.net.URLDecoder/decode (first v) "utf-8"))]
-    [key value]))
+    [(keyword key) value]))
 
 (defn fetch-pdt-status
   "Fetch the PDT completion status for transaction TX at PROCESSOR."
