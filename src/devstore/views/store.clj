@@ -103,6 +103,12 @@ Elements in ITEMS are encoded based on their position/index in the list."
 (defn render-template [s]
   (apply str s))
 
+(html/defsnippet history-entry "devstore/views/cart.html" [:tr#history-entry]
+  [[_ {:keys [purchase ipn pdt]}]]
+  [:#history-invoice] (html/content (:invoice purchase))
+  [:#history-pdt]     (html/content (if (nil? pdt) "" "Y"))
+  [:#history-ipn]     (html/content (if (nil? ipn) "" "Y")))
+
 (html/defsnippet cart-item "devstore/views/cart.html" [:tr#cartitem]
   [{:keys [item-name item-sku item-quantity item-price item-tax item-shipping]}]
   [:#item-name]     (html/content item-name)
@@ -144,8 +150,9 @@ Elements in ITEMS are encoded based on their position/index in the list."
                                (html/set-attr :name (name k) :id (name k) :value v)))
 
 (html/deftemplate cart "devstore/views/cart.html"
-  [items formparams processor params pdt-response]
+  [items formparams processor params pdt-response history]
   [:#invoicenum]     (html/content (str (formparams :invoice)))
+  [:#history-entry]  (html/substitute (map history-entry history))
   [:#cartitem]       (html/substitute (map cart-item items))
   [:#subtotal]       (html/substitute (subtotal (subtotals items)))
   [:#cancelform]     (html/set-attr :action (host/our-host-url))
@@ -160,13 +167,14 @@ Elements in ITEMS are encoded based on their position/index in the list."
      (let [items      (:items offer)
            processor  (proc/current-processor)
            formparams (form-params-for offer processor)
-           pdt-status (proc/pdt-from-params params)]
+           pdt-status (proc/pdt-from-params params)
+           history    (purchase/find-by-cart-id id)]
        ;; track new purchases and pdts as needed
        (if (nil? pdt-status)
-         (purchase/create  formparams)
-         (purchase/add-pdt pdt-status))
+         (purchase/create  (assoc formparams :id id))
+         (purchase/add-pdt (assoc pdt-status :id id)))
        (render-template
-        (cart items formparams processor params pdt-status))))))
+        (cart items formparams processor params pdt-status history))))))
 
 (defpage [:post "/store/:id"] {id :id :as params}
   (println "POST /store/:id " params)
