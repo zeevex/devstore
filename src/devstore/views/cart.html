@@ -5,8 +5,9 @@
     <thead>
       <tr>
 	<th align="left">Invoice ID</th>
-	<th align="left">PDT</th>
-	<th align="left">IPN</th>
+	<th align="right">PDT</th>
+	<th align="right">IPN</th>
+	<th align="right">Cancelled</th>
       </tr>
     </thead>
     <tbody>
@@ -14,6 +15,7 @@
 	<td id="history-invoice">devstore-1234567890</td>
 	<td id="history-pdt" align="right">y</td>
 	<td id="history-ipn" align="right">n</td>
+	<td id="history-cancel" align="right">n</td>
       </tr>
   </table>
 </div>
@@ -95,23 +97,6 @@
   </tbody>
 </table>
 
-<div id="responses">
-  <p>
-    <h2>Purchase was <span id="response-status">completed</span>!</h2>
-    <hr/>
-    <h3>PDT Lookup Response</h3>
-    <table id="response-detail">
-      <thead>
-	<tr>
-	  <th align="left">Parameter</th>
-	  <th align="left">Value</th>
-	</tr>
-      </thead>
-      <tbody>
-	<tr id="response-entry">
-	  <td id="response-param">txn_id</td>
-	  <td id="response-value">9daf6dbcd7cf9ef9_4fc67191</td>
-	</tr>
-    </table>
-  </p>
+<div id="purchase-status">
+  <p><h2>Purchase was <span id="purchase-completion">completed</span>!</h2></p>
 </div>

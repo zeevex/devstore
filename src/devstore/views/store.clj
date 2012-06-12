@@ -106,10 +106,11 @@ Elements in ITEMS are encoded based on their position/index in the list."
   (apply str s))
 
 (html/defsnippet history-entry "devstore/views/cart.html" [:tr#history-entry]
-  [[_ {:keys [purchase ipn pdt]}]]
+  [[_ {:keys [purchase ipn pdt status]}]]
   [:#history-invoice] (html/content (:invoice purchase))
   [:#history-pdt]     (html/content (if (nil? pdt) "" "Y"))
-  [:#history-ipn]     (html/content (if (nil? ipn) "" "Y")))
+  [:#history-ipn]     (html/content (if (nil? ipn) "" "Y"))
+  [:#history-cancel]  (html/content (if (= status "cancel") "Y" "")))
 
 (html/defsnippet cart-item "devstore/views/cart.html" [:tr#cartitem]
   [{:keys [item-name item-sku item-quantity item-price item-tax item-shipping]}]
@@ -128,22 +129,21 @@ Elements in ITEMS are encoded based on their position/index in the list."
   [:#subtotal-tax]      (html/content (str subtotal-tax))
   [:#subtotal-shipping] (html/content (str subtotal-shipping)))
 
-(html/defsnippet response-entry "devstore/views/cart.html" [:tr#response-entry]
+(html/defsnippet response-entry "devstore/views/params.html" [:tr#response-entry]
   [[param value]]
   [:#response-param] (html/content (name param))
   [:#response-value] (html/content (name value)))
 
-(html/defsnippet response-detail "devstore/views/cart.html" [:#responses]
-  [status params]
-  [:#response-status] (html/content status)
-  [:#response-entry]  (html/substitute (map response-entry (sort-by #(-> % first name) params))))
+(html/defsnippet purchase-completion "devstore/views/cart.html" [:#purchase-status]
+  [status]
+  [:#purchase-completion] (html/content status))
 
-(defn- responses-in
-  [params pdt-response]
+(defn- purchase-status
+  [params]
   (if-let [[_ action] (find params :action)]
     (case action
-      "cancel"   (response-detail "cancelled" pdt-response)
-      "complete" (response-detail "completed" pdt-response)
+      "cancel"   (purchase-completion "cancelled")
+      "complete" (purchase-completion "completed")
       "")))
 
 (html/defsnippet input-elements "devstore/views/cart.html" [:input#business]
@@ -152,15 +152,15 @@ Elements in ITEMS are encoded based on their position/index in the list."
                                (html/set-attr :name (name k) :id (name k) :value v)))
 
 (html/deftemplate cart "devstore/views/cart.html"
-  [items formparams processor params pdt-response history]
-  [:#invoicenum]     (html/content (str (formparams :invoice)))
-  [:#history-entry]  (html/substitute (map history-entry history))
-  [:#cartitem]       (html/substitute (map cart-item items))
-  [:#subtotal]       (html/substitute (subtotal (subtotals items)))
-  [:#cancelform]     (html/set-attr :action (host/our-host-url))
-  [:#purchaseform]   (html/set-attr :action (:api-url processor))
-  [:#purchaseinputs] (html/substitute (input-elements formparams items))
-  [:#responses]      (html/substitute (responses-in params pdt-response)))
+  [items formparams processor params history]
+  [:#invoicenum]      (html/content (str (formparams :invoice)))
+  [:#history-entry]   (html/substitute (map history-entry history))
+  [:#cartitem]        (html/substitute (map cart-item items))
+  [:#subtotal]        (html/substitute (subtotal (subtotals items)))
+  [:#cancelform]      (html/set-attr :action (host/our-host-url))
+  [:#purchaseform]    (html/set-attr :action (:api-url processor))
+  [:#purchaseinputs]  (html/substitute (input-elements formparams items))
+  [:#purchase-status] (html/substitute (purchase-status params)))
 
 (defpage "/store/:id" {id :id :as params}
   (println "GET /store/:id " params)
