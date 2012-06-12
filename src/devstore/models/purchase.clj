@@ -45,6 +45,11 @@ Each entry is itself a map with keys :purchase, :pdt, and :ipn."
   [ipn]
   (track-by-invoice ipn :ipn))
 
+(defn set-status
+  "Set STATUS for purchase identified by INVOICE."
+  [invoice status]
+  (dosync (alter purchases assoc-in [invoice :status] status)))
+
 (defn find-by-invoice
   "Locate a purchase by its INVOICE.
 Returns a map containing :purchase, :ipn, and :pdt maps."
