@@ -1,7 +1,8 @@
 (ns devstore.models.hostname
   (:require [noir [core    :as core]
                   [request :as req]
-                  [session :as session]]))
+                  [session :as session]]
+            [clojure.string :as string]))
 
 (defn init!
   []
@@ -33,12 +34,21 @@
   (str (request-scheme) "://"
        (request-hostname)))
 
+(defn- url-encoded-params
+  [params]
+  (letfn [(encode-pair [[k v]]
+            (str (java.net.URLEncoder/encode (name k))
+                 "="
+                 (java.net.URLEncoder/encode (name v))))]
+    (string/join "&" (map encode-pair params))))
+
 (defn return-url-for
-  "The return url for OFFER under ACTION."
-  [offer action]
+  "The return url for OFFER with PARAMS."
+  [offer params]
   (str (our-host-url)
-       (core/url-for "/store/:id" {:id (:id offer)})
-       "?action=" action))
+       (core/url-for (str "/notify/purchase/" (:action params) "/:id") {:id (:id offer)})
+       "?"
+       (url-encoded-params params)))
 
 (defn notify-url-for
   "The notify return (IPN) url for OFFER."
