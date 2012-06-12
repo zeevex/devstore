@@ -8,7 +8,8 @@
             [noir
              [response :as resp]
              [request  :as req]]
-            [net.cgrand.enlive-html :as html])
+            [net.cgrand.enlive-html :as html]
+            [clj-time.core          :as time])
   (:use noir.core
         [hiccup core page form element]
         [clojure
@@ -25,9 +26,9 @@ Values are not modified."
 
 (defn- response-params-for
   "Returns map of purchase completion response parameters."
-  [offer processor]
-  (let [response {:return        (host/return-url-for offer "complete")
-                  :cancel_return (host/return-url-for offer "cancel")
+  [offer invoice processor]
+  (let [response {:return        (host/return-url-for offer {:action "complete", :invoice invoice})
+                  :cancel_return (host/return-url-for offer {:action "cancel",   :invoice invoice})
                   :notify_url    (host/notify-url-for offer)}]
     ;; replace any response entries with the corresponding URLs
     (walk (fn [[k v]] (when v [k (response k)])) identity (:response offer))))
@@ -35,13 +36,14 @@ Values are not modified."
 (defn- form-params-for
   "Returns map of all non-item form parameters."
   [offer processor]
-  (let [cart-params  {:cmd      "_cart"
-                      :upload   1
-                      :business (:opaque-id processor)
-                      :invoice  (purchase/new-invoice-id)
-                      :rm       0}
-        offer-params (select-keys offer [:brand :currency_code])
-        response-params (response-params-for offer processor)]
+  (let [invoice         (purchase/new-invoice-id)
+        cart-params     {:cmd      "_cart"
+                         :upload   1
+                         :business (:opaque-id processor)
+                         :invoice  invoice
+                         :rm       0}
+        offer-params    (select-keys offer [:brand :currency_code])
+        response-params (response-params-for offer invoice processor)]
     (merge cart-params offer-params response-params)))
 
 (defn- subtotals [offer-items]
@@ -166,24 +168,29 @@ Elements in ITEMS are encoded based on their position/index in the list."
    (if-let [offer (offer/find-by-id id)]
      (let [items      (:items offer)
            processor  (proc/current-processor)
-           formparams (form-params-for offer processor)
-           pdt-status (proc/pdt-from-params params)
-           history    (purchase/find-by-cart-id id)]
-       ;; track new purchases and pdts as needed
-       (if (nil? pdt-status)
-         (purchase/create  (assoc formparams :id id))
-         (purchase/add-pdt (assoc pdt-status :id id)))
-       (render-template
-        (cart items formparams processor params pdt-status history))))))
+           formparams (form-params-for offer processor)]
+       (purchase/create (assoc formparams :id id))
+       (let [history (purchase/find-by-cart-id id (time/minus (time/now) (time/hours 2)))]
+         (render-template
+          (cart items formparams processor params history)))))))
 
 (defpage [:post "/store/:id"] {id :id :as params}
   (println "POST /store/:id " params)
   (render "/store/:id" params))
 
+(defpage "/notify/purchase/complete/:id" {:keys [id invoice] :as params}
+  (purchase/set-status invoice "complete")
+  (let [pdt-status (proc/pdt-from-params params)]
+    (purchase/add-pdt (assoc pdt-status :id id)))
+  (render "/store/:id" params))
+
+(defpage [:post "/notify/purchase/cancel/:id"] {:keys [id invoice] :as params}
+  (purchase/set-status invoice "cancel")
+  (render "/store/:id" params))
+
 (defpage [:post "/notify/ipn/:id"] {id :id :as params}
   (println "NOTIFY /notify/ipn/:id" params)
   (purchase/add-ipn params)
-  ;;(println "ENTRY " (pprint (purchase/find-by-invoice (:invoice params))))
   "OK")
 
 (defpage [:post "/options"] {:keys [processor hostname] :as params}
