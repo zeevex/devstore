@@ -1,7 +1,6 @@
 (ns devstore.models.purchase
-  (:use [clj-time
-         [core :only [now]]
-         [coerce :only [to-long]]]))
+  (:use [clj-time [coerce :only [to-long]]])
+  (:require [clj-time.core :as time]))
 
 (defn init!
   []
@@ -17,11 +16,11 @@ Each entry is itself a map with keys :purchase, :pdt, and :ipn."
   []
   ;; Go the extra mile to ensure uniqueness of invoice numbers as
   ;; everything is keyed off of them.
-  (let [id (str "devstore-" (to-long (now)))]
+  (let [id (str "devstore-" (to-long (time/now)))]
     (dosync
      (if-not (find @purchases id)
        ;; reserve the new invoice name with a nil valued entry
-       (do (alter purchases merge [id nil])
+       (do (alter purchases merge [id {:created-at (time/now)}])
            id)
        (do (Thread/sleep 10)
            (recur))))))
@@ -55,6 +54,15 @@ Returns a map containing :purchase, :ipn, and :pdt maps."
 
 (defn find-by-cart-id
   "Locate purchases for a cart, identified by its ID.
+Purchases older than CUTOFF-TIME are omitted if it's non-nil.
+
 Returns a sequence of purchases."
-  [id]
-  (filter (fn [[_ {purchase :purchase}]] (= id (:id purchase))) @purchases))
+  [id & [cutoff-time]]
+  (letfn [(selectively [[_ {:keys [purchase created-at] :as entry}]]
+            (and (= id (:id purchase))
+                 (or (nil? cutoff-time)
+                     (time/after? created-at cutoff-time))
+                 ;; ignore purchases we never did anything with,
+                 ;; cancelled purchases will still show
+                 (some #(% entry) [:ipn :pdt :status])))]
+    (filter selectively @purchases)))
