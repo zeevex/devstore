@@ -20,6 +20,12 @@
     :site-url   "http://sandbox.zeevex.com/"
     :api-url    "http://sandbox.zeevex.com/cgi-bin/webscr"
     :auth-token "437880eaa7e92be19bba"
+    :opaque-id  "50F626"}
+   {:id         3
+    :name       "Zxdev - strawmann"
+    :site-url   "http://zxdev.zeevex.net/"
+    :api-url    "http://zxdev.zeevex.net/cgi-bin/webscr"
+    :auth-token "437880eaa7e92be19bba"
     :opaque-id  "50F626"}])
 
 (def ^:private default-processor-id
