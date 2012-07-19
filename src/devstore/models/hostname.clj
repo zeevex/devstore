@@ -32,7 +32,7 @@
   "The host URL of the current request."
   []
   (str (request-scheme) "://"
-       (request-hostname)))
+       (current-hostname)))
 
 (defn- url-encoded-params
   [params]
