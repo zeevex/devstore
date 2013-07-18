@@ -57,10 +57,13 @@ Each entry is itself a map with keys :purchase, :pdt, and :ipn."
                                    {:query-params
                                     (merge ipn {:cmd "_notify-validate"})})]
     ;; HTTP 200 + first line of body is VERIFIED
-    (when-not (and (= 200 (:status response))
-                   (let [lines (split-lines (:body response))]
-                     (= "VERIFIED" (first lines))))
-      (println "NOTIFY-VALIDATE failed" response))))
+    (if (and (= 200 (:status response))
+             (let [lines (split-lines (:body response))]
+               (= "VERIFIED" (first lines))))
+      (do (println "NOTIFY-VALIDATE succeeded" response)
+          true)
+      (do (println "NOTIFY-VALIDATE failed" response)
+          false))))
 
 (defn set-status
   "Set STATUS for purchase identified by INVOICE."
