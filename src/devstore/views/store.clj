@@ -106,11 +106,12 @@ Elements in ITEMS are encoded based on their position/index in the list."
   (apply str s))
 
 (html/defsnippet history-entry "devstore/views/cart.html" [:tr#history-entry]
-  [[_ {:keys [purchase ipn pdt status]}]]
-  [:#history-invoice] (html/content (:invoice purchase))
-  [:#history-pdt]     (html/content (if (nil? pdt) "" "Y"))
-  [:#history-ipn]     (html/content (if (nil? ipn) "" "Y"))
-  [:#history-cancel]  (html/content (if (= status "cancel") "Y" "")))
+  [[_ {:keys [purchase ipn ipn-validate pdt status]}]]
+  [:#history-invoice]      (html/content (:invoice purchase))
+  [:#history-pdt]          (html/content (if (nil? pdt) "" "Y"))
+  [:#history-ipn]          (html/content (if (nil? ipn) "" "Y"))
+  [:#history-ipn-validate] (html/content (if (nil? ipn-validate) "" "Y"))
+  [:#history-cancel]       (html/content (if (= status "cancel") "Y" "")))
 
 (html/defsnippet cart-item "devstore/views/cart.html" [:tr#cartitem]
   [{:keys [item-name item-sku item-quantity item-price item-tax item-shipping]}]
