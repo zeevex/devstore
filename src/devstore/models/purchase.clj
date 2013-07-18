@@ -46,9 +46,9 @@ Each entry is itself a map with keys :purchase, :pdt, and :ipn."
 (defn add-ipn
   "Track IPN with its purchase, identified by its invoice number."
   [ipn]
-  (let [valid (validate-ipn ipn)]
-    (track-by-invoice ipn :ipn)
-    (track-by-invoice valid :ipn-validate)))
+  (track-by-invoice ipn :ipn)
+  (if (validate-ipn ipn)
+    (track-by-invoice ipn :ipn-validate)))
 
 (defn- validate-ipn
   "Validate IPN at payment processor."
