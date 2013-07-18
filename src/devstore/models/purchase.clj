@@ -1,6 +1,8 @@
 (ns devstore.models.purchase
-  (:use [clj-time [coerce :only [to-long]]])
-  (:require [clj-time.core :as time]))
+  (:use [clj-time [coerce :only [to-long]]]
+        [clojure.string :only [split split-lines]])
+  (:require [clj-http.client :as client]
+            [clj-time.core :as time]))
 
 (defn init!
   []
@@ -40,10 +42,24 @@ Each entry is itself a map with keys :purchase, :pdt, and :ipn."
   [pdt]
   (track-by-invoice pdt :pdt))
 
+(declare validate-ipn)
 (defn add-ipn
   "Track IPN with its purchase, identified by its invoice number."
   [ipn]
-  (track-by-invoice ipn :ipn))
+  (let [valid (validate-ipn ipn)]
+    (track-by-invoice ipn :ipn)
+    (track-by-invoice valid :ipn-validate)))
+
+(defn- validate-ipn
+  "Validate IPN at payment processor."
+  [ipn]
+  (when-let [response (client/post (:verify_url ipn)
+                                   {:query-params
+                                    (merge ipn {:cmd "_notify-validate"})})]
+    ;; HTTP 200 + first line of body is VERIFIED
+    (and (= 200 (:status response))
+         (let [lines (split-lines (:body response))]
+           (= "VERIFIED" (first lines))))))
 
 (defn set-status
   "Set STATUS for purchase identified by INVOICE."
