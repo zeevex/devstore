@@ -54,7 +54,7 @@ Each entry is itself a map with keys :purchase, :pdt, and :ipn."
   "Validate IPN at payment processor."
   [ipn]
   (when-let [response (client/post (:verify_url ipn)
-                                   {:query-params
+                                   {:form-params
                                     (merge ipn {:cmd "_notify-validate"})})]
     ;; HTTP 200 + first line of body is VERIFIED
     (if (and (= 200 (:status response))
