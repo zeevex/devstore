@@ -55,7 +55,8 @@ Each entry is itself a map with keys :purchase, :pdt, and :ipn."
   [ipn]
   (when-let [response (client/post (:verify_url ipn)
                                    {:form-params
-                                    (merge ipn {:cmd "_notify-validate"})})]
+                                    ;; remove :id field added locally before posting
+                                    (merge (dissoc ipn :id) {:cmd "_notify-validate"})})]
     ;; HTTP 200 + first line of body is VERIFIED
     (if (and (= 200 (:status response))
              (let [lines (split-lines (:body response))]
